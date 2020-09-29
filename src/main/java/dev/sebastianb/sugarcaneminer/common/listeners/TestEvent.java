@@ -13,7 +13,7 @@ public class TestEvent {
         System.out.println("Joined");
 
         //copy pasted code that doesn't work from docs yet
-        //outputs "
+        //outputs "Baritone settings file not found, resetting."
         BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().setGoalAndPath(new GoalXZ(10000, 20000));
 
 
