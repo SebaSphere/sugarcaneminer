@@ -16,6 +16,5 @@ public class TestEvent {
         //outputs "Baritone settings file not found, resetting."
         BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().setGoalAndPath(new GoalXZ(10000, 20000));
 
-
     }
 }
