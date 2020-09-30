@@ -38,6 +38,7 @@ public class HoverOnBlockThenBreak {
             World world = player.world;
             BlockPos lookingAt = Minecraft.getMinecraft().objectMouseOver.getBlockPos();
 
+            if (lookingAt.getY() != player.getPosition().getY()) { return; }
 
             if (world.getBlockState(lookingAt).getBlock() == Blocks.REEDS) {
                 Minecraft.getMinecraft().playerController.clickBlock(lookingAt, EnumFacing.NORTH);

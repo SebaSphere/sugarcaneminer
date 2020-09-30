@@ -12,8 +12,8 @@ public class TestEvent {
     public void walk(PlayerEvent.PlayerLoggedInEvent event) {
         System.out.println("Joined");
 
-        //copy pasted code that doesn't work from docs yet
-        //outputs "Baritone settings file not found, resetting."
+
+        //well it does something different. Crashes this time
         BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().setGoalAndPath(new GoalXZ(10000, 20000));
 
     }
