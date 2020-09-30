@@ -1,60 +1,34 @@
 package dev.sebastianb.sugarcaneminer.mixin;
 
-import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.github.impactdevelopment.simpletweaker.SimpleTweaker;
+import net.minecraft.launchwrapper.Launch;
+import net.minecraft.launchwrapper.LaunchClassLoader;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
+import org.spongepowered.tools.obfuscation.mcp.ObfuscationServiceMCP;
 
-import java.util.Map;
+import java.util.List;
 
+public class MixinLoaderForge extends SimpleTweaker {
 
-@IFMLLoadingPlugin.Name("SugarCaneMinerMixinLoader")
-@IFMLLoadingPlugin.MCVersion("1.12.2")
-public class MixinLoaderForge implements IFMLLoadingPlugin {
-
-    public static final Logger log = LogManager.getLogger("SugarCaneMiner");
-    private static boolean isObfuscatedEnvironment = false;
-
-
-
-
-    public MixinLoaderForge() {
-        log.info("Baritone mixins loading...");
+    @Override
+    public void injectIntoClassLoader(LaunchClassLoader classLoader) {
+        super.injectIntoClassLoader(classLoader);
 
         MixinBootstrap.init();
-        Mixins.addConfigurations("mixins.baritone.json");
-        MixinEnvironment.getDefaultEnvironment().setObfuscationContext("searge");
-        System.out.println(MixinEnvironment.getDefaultEnvironment().getObfuscationContext());
 
+        // noinspection unchecked
+        List<String> tweakClasses = (List<String>) Launch.blackboard.get("TweakClasses");
 
-        //blah gonna do stuff after I get the log working
-    }
+        String obfuscation = ObfuscationServiceMCP.NOTCH;
+        if (tweakClasses.stream().anyMatch(s -> s.contains("net.minecraftforge.fml.common.launcher"))) {
+            obfuscation = ObfuscationServiceMCP.SEARGE;
+        }
 
+        MixinEnvironment.getDefaultEnvironment().setSide(MixinEnvironment.Side.CLIENT);
+        MixinEnvironment.getDefaultEnvironment().setObfuscationContext(obfuscation);
 
-    @Override
-    public String[] getASMTransformerClass() {
-        return new String[0];
-    }
-
-    @Override
-    public String getModContainerClass() {
-        return null;
-    }
-
-    @Override
-    public String getSetupClass() {
-        return null;
-    }
-
-    @Override
-    public void injectData(Map<String, Object> data) {
-        isObfuscatedEnvironment = (boolean) data.get("runtimeDeobfuscationEnabled");
-    }
-
-    @Override
-    public String getAccessTransformerClass() {
-        return null;
+        Mixins.addConfiguration("mixins.baritone.json");
     }
 }
