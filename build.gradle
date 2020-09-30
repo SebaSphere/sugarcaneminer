@@ -1,83 +1,74 @@
 buildscript {
     repositories {
-        maven {
-            name = "MinecraftForge"
-            url = "https://files.minecraftforge.net/maven/"
-        }
-        maven {
-            name = "SpongePowered"
-            url = "http://repo.spongepowered.org/maven/"
-        }
         jcenter()
-        mavenCentral()
+        maven { url = "https://files.minecraftforge.net/maven" }
+        maven { url = "https://repo.spongepowered.org/maven" }
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath "gradle.plugin.com.matthewprenger:CurseGradle:1.4.0"
         classpath "org.spongepowered:mixingradle:0.6-SNAPSHOT"
     }
 }
 
 plugins {
-    id "com.github.johnrengelman.shadow" version "4.0.4"
-    id "maven-publish"
+    id "com.matthewprenger.cursegradle" version "1.4.0"
 }
 
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: "java"
-apply plugin: 'org.spongepowered.mixin'
+def mcVersion = project.mc_version
 
-group = 'dev.sebastianb'
-version = '1.0.0'
-archivesBaseName = 'sugarcaneminer'
+apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: "org.spongepowered.mixin"
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+version = project.version
+group = "dev.sebastianb.sugarcaneminer"
+archivesBaseName = "SugarCaneMiner"
+sourceCompatibility = targetCompatibility = 1.8
 
 minecraft {
-    mappings channel: 'stable', version: '39-1.12'
+    version = "${forge_version}"
+    runDir = "run"
+    mappings = "${mcp_mapping}"
+    makeObfSourceJar = false
 
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    replace "@FINGERPRINT@", project.findProperty('signSHA1')
 
-    runs {
-        client {
-            workingDirectory project.file('run')
+    def args = [
+            "-Dfml.coreMods.load=dev.sebastianb.sugarcaneminer.mixin.MixinLoaderForge",
+            "-Dmixin.debug.export=true",
+            "-Dmixin.debug.verbose=true"
 
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+    ]
 
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
+    clientJvmArgs.addAll(args)
+    serverJvmArgs.addAll(args)
 
-            mods {
-                sugarcaneminer {
-                    source sourceSets.main
-                }
-            }
-        }
+    clientRunArgs += "--mixin mixins.tweaklib.json"
+    serverRunArgs += "--mixin mixins.tweaklib.json"
 
-        server {
-            workingDirectory project.file('run')
+}
 
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+configurations {
+    embed
+    implementation.extendsFrom(embed)
+}
 
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
 
-            mods {
-                sugarcaneminer {
-                    source sourceSets.main
-                }
-            }
-        }
-        //coreMod = 'dev.sebastian.sugarcaneminer.mixin.MixinLoaderForge'
 
-    }
+dependencies {
+    embed("org.spongepowered:mixin:0.7.11-SNAPSHOT") { transitive = false }
+
+    compile 'com.github.cabaletta:baritone:1.2.14'
+    compile 'cabaletta:baritone-api:1.2'
 }
 
 repositories {
     maven {
-        name = 'spongepowered-repo'
-        url = 'http://repo.spongepowered.org/maven/'
+        url "https://plugins.gradle.org/m2/"
+    }
+    maven {
+        url = "http://repo.spongepowered.org/maven/"
     }
     maven {
         name = 'impactdevelopment-repo'
@@ -87,37 +78,74 @@ repositories {
         name = "jitpack.io"
         url = "https://jitpack.io"
     }
-    mavenCentral()
-    jcenter()
-}
-dependencies {
-    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
-    runtime launchCompile('org.spongepowered:mixin:0.7.11-SNAPSHOT') {
-        // Mixin includes a lot of dependencies that are too up-to-date
-        exclude module: 'launchwrapper'
-        exclude module: 'guava'
-        exclude module: 'gson'
-        exclude module: 'commons-io'
-        exclude module: 'log4j-core'
-    }
-
-    compile 'com.github.cabaletta:baritone:1.2.14'
-    compile 'cabaletta:baritone-api:1.2'
-    runtime launchCompile('com.github.ImpactDevelopment:SimpleTweaker:1.2')
 }
 
+//sourceSets {
+//    main {
+//        ext.refMap = "mixins.tweaklib.refmap.json"
+//    }
+//}
 mixin {
     defaultObfuscationEnv searge
-    add sourceSets.launch, 'mixins.baritone.refmap.json'
+
 }
 
 jar {
+    from(configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "LICENSE.txt", "META-INF/*.txt", "META-INF/MANIFSET.MF", "META-INF/maven/**", "META-INF/*.RSA", "META-INF/*.SF"
+    }
     manifest {
-        attributes(
-                  'MixinConfigs': 'mixins.baritone.json',
-
+        attributes("FMLCorePluginContainsFMLMod": "true",
+                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+                'TweakOrder': 0,
+                "FMLCorePlugin": "dev.sebastianb.sugarcaneminer.mixin.MixinLoaderForge",
+                "ForceLoadAsMod": "true"
         )
     }
+    baseName = "SugarCaneMiner-" + mcVersion
 }
 
-jar.finalizedBy('reobfJar')
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    baseName = "SugarCaneMiner-" + mcVersion
+    classifier = "sources"
+}
+
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    from(configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "LICENSE.txt", "META-INF/*.txt", "META-INF/MANIFSET.MF", "META-INF/maven/**", "META-INF/*.RSA", "META-INF/*.SF"
+    }
+    manifest {
+        attributes("FMLCorePluginContainsFMLMod": "true",
+                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+                'TweakOrder': 0,
+                "FMLCorePlugin": "dev.sebastianb.sugarcaneminer.mixin.MixinLoaderForge",
+                "ForceLoadAsMod": "true"
+        )
+    }
+    baseName = "SugarCaneMiner-" + mcVersion
+    classifier = "deobf"
+}
+
+artifacts {
+    archives sourcesJar
+    archives deobfJar
+}
+
+
+
+task signJar(type: SignJar, dependsOn: reobfJar) {
+    onlyIf {
+        project.hasProperty('keyStore')
+    }
+    keyStore = project.findProperty('keyStore')
+    alias = project.findProperty('keyStoreAlias')
+    storePass = project.findProperty('keyStorePass')
+    keyPass = project.findProperty('keyStoreKeyPass')
+    inputFile = jar.archivePath
+    outputFile = jar.archivePath
+
+}
+
+build.dependsOn signJar

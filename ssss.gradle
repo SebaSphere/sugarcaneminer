@@ -1,0 +1,112 @@
+buildscript {
+    repositories {
+        maven {
+            name = "MinecraftForge"
+            url = "https://files.minecraftforge.net/maven/"
+        }
+        maven {
+            name = "SpongePowered"
+            url = "http://repo.spongepowered.org/maven/"
+        }
+        jcenter()
+        mavenCentral()
+
+
+    }
+    dependencies {
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath "org.spongepowered:mixingradle:0.7-SNAPSHOT"
+    }
+}
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "4.0.4"
+    id "maven-publish"
+}
+
+apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: "java"
+
+
+
+
+group = 'dev.sebastianb'
+version = '1.0.0'
+archivesBaseName = 'sugarcaneminer'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+minecraft {
+    version = "${forge_version}"
+    runDir = "run"
+    mappings = "${mcp_mapping}"
+    makeObfSourceJar = false
+
+    replace "@FINGERPRINT@", project.findProperty('signSHA1')
+
+    def args = [
+            "-Dfml.coreMods.load=net.rom.tweaklib.plugin.GalacticTweakLibPlugin",
+            "-Dmixin.debug.export=true",
+            "-Dmixin.debug.verbose=true"
+
+    ]
+
+    clientJvmArgs.addAll(args)
+    serverJvmArgs.addAll(args)
+
+    clientRunArgs += "--mixin mixins.tweaklib.json"
+    serverRunArgs += "--mixin mixins.tweaklib.json"
+
+}
+
+
+repositories {
+    maven {
+        name = 'spongepowered-repo'
+        url = 'http://repo.spongepowered.org/maven/'
+    }
+    maven {
+        name = 'impactdevelopment-repo'
+        url = 'https://impactdevelopment.github.io/maven/'
+    }
+    maven {
+        name = "jitpack.io"
+        url = "https://jitpack.io"
+    }
+    mavenCentral()
+    jcenter()
+}
+dependencies {
+    // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
+    // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
+    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
+    compile "org.spongepowered:mixin:0.8.1-SNAPSHOT"
+
+    compile 'com.github.cabaletta:baritone:1.2.14'
+    compile 'cabaletta:baritone-api:1.2'
+
+
+}
+
+
+
+
+//MIXINS FUCK YEAH
+jar {
+    manifest {
+        attributes(
+//                'MixinConfigs': 'mixins.kami.json',
+                "MixinConnector": "dev.sebastian.sugarcaneminer.mixin.MixinLoaderForge",
+//                'tweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+//                'TweakOrder': 0,
+//                'FMLCorePluginContainsFMLMod': 'true',
+//                'FMLCorePlugin': 'dev.sebastian.sugarcaneminer.mixin.MixinLoaderForge',
+//                'ForceLoadAsMod': 'true',
+//                'FMLAT': 'kami_at.cfg'
+        )
+    }
+}
+
+
+jar.finalizedBy('reobfJar')
