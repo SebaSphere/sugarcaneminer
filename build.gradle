@@ -103,6 +103,7 @@ dependencies {
 
     compile 'com.github.cabaletta:baritone:1.2.14'
     compile 'cabaletta:baritone-api:1.2'
+    runtime launchCompile('com.github.ImpactDevelopment:SimpleTweaker:1.2')
 }
 
 mixin {
